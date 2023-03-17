@@ -1,0 +1,5 @@
+#!/bin/sh
+mv *png /gpfs/cfel/user/rodria/proc/p09_test/;
+mv *.err ../err;
+mv *.out ../out;
+mv lyso*.h5 /gpfs/cfel/user/rodria/proc/p09_test/;
