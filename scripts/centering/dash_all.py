@@ -18,11 +18,12 @@ def get_data_func(files: List[str], func: str) -> pd.DataFrame:
         function = lambda df: df.median()
 
     mean_data = []
+
     for idx, i in enumerate(files[:]):
         stats = get_stats(i)
         df_stats = pd.DataFrame.from_dict(data=stats)
         param_value = df_stats["param_value"]
-        outliers = detect_outliers(df_stats, cut_px=None, cut_percent=0.1, mean=False)
+        outliers = detect_outliers(df_stats, cut_percent=0.03, mean=False)
         n_outliers_x = outliers[0].sum()
         n_outliers_y = outliers[1].sum()
         mean = function(df_stats)
@@ -33,8 +34,10 @@ def get_data_func(files: List[str], func: str) -> pd.DataFrame:
         tmp_data["param_value"] = param_value
         c = tmp_data.columns
         mean_data.append(tmp_data)
-    mean_data = pd.concat(mean_data).reset_index()[c]
-
+    try:
+        mean_data = pd.concat(mean_data).reset_index()[c]
+    except(ValueError):
+        mean_data = pd.DataFrame(mean_data).reset_index()[c]
     return mean_data
 
 
@@ -59,13 +62,16 @@ def plot_mean_data(df: pd.DataFrame, func: str):
 
     # x_ticks=numpy.arange(0,df.shape[0],round(df.shape[0]/6))
     param = "Threshold"
-    start = round(df.iloc[0]["param_value"], 2)
+    start = round(df.iloc[0]["param_value"], 3)
     step = (
-        round(df.iloc[-1]["param_value"], 2) - round(df.iloc[0]["param_value"], 2)
+        round(df.iloc[-1]["param_value"], 3) - round(df.iloc[0]["param_value"], 3)
     ) / 6
-    stop = round(df.iloc[-1]["param_value"] + step, 2)
+    stop = round(df.iloc[-1]["param_value"] + step, 3)
     # print(start,stop,step)
-    x_ticks = numpy.arange(start, stop, round(step, 2))
+    try:
+        x_ticks = numpy.arange(start, stop, round(step, 3))
+    except(ValueError):
+        x_ticks = numpy.arange(start, start+1, 1)
 
     df.plot(
         x="param_value",

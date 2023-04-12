@@ -14,20 +14,19 @@
 #MAIL=ana.rodrigues@desy.de
 ### It will look for a ROOT/run_0/gen_images.h5 ROOT/gen_images_ref.h5
 INPUT=$1
-ROOT=/gpfs/cfel/user/rodria/proc/p09_test/${INPUT}
+ROOT=/gpfs/cfel/user/rodria/proc/p09_test/moving_beam/${INPUT}
 
 ### fixed param
 THR=1
-R=0.5
-GEN=20
-LIM=0
-
+R=0.95
+GEN=60
+LIM=0.616
 
 ## parameter in range r_ext
-PARAM='l'
-START=0.59
-STEP=0.002
-END=0.65
+PARAM='r'
+START=0.95
+STEP=0.05
+END=0.95
 RUN=0
 
 for i in $(seq $START $STEP $END); do
@@ -38,13 +37,13 @@ for i in $(seq $START $STEP $END); do
     NAME="center-p09_run_${RUN}"
     SLURMFILE="${NAME}_${INPUT}.sh"
 
-    mkdir ${ROOT}/run_${NEXT}
-    cp ${ROOT}/run_${RUN}/gen_images.h5 ${ROOT}/run_${NEXT}/
+    #mkdir ${ROOT}/run_${NEXT}
+    #cp ${ROOT}/run_${RUN}/gen_images.h5 ${ROOT}/run_${NEXT}/
 
     echo "#!/bin/sh" > $SLURMFILE
     echo >> $SLURMFILE
-    echo "#SBATCH --partition=upex" >> $SLURMFILE  # Set your partition here
-    echo "#SBATCH --time=16:00:00" >> $SLURMFILE
+    echo "#SBATCH --partition=upex,cfel,cfel-cdi" >> $SLURMFILE  # Set your partition here
+    echo "#SBATCH --time=14:00:00" >> $SLURMFILE
     echo "#SBATCH --nodes=1" >> $SLURMFILE
     echo >> $SLURMFILE
     echo "#SBATCH --chdir   $PWD" >> $SLURMFILE
@@ -56,7 +55,7 @@ for i in $(seq $START $STEP $END); do
     #echo "#SBATCH --mail-user $MAIL" >> $SLURMFILE
     echo >> $SLURMFILE
 
-    command="python3 genetic.py -i ${ROOT}/run_${RUN}/gen_images.h5 -a ${ROOT}/gen_images_refs.h5 -p ${PARAM}"
+    command="python3 genetic.py -i ${ROOT}_100/../lists/${INPUT}.lst -a ${ROOT}_100/gen_images_refs.h5 -p ${PARAM} -o ${ROOT}_200/run_${RUN}/gen_images.h5"
 
     if [ $PARAM = 'r' ]
     then

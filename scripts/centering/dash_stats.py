@@ -22,9 +22,12 @@ def search_files(
     )
 
     if sort == True:
-        files = sorted(files, key=lambda x: int(x.split("/")[8][4:]))
-
-    return files[:-1]
+        files = sorted(files, key=lambda x: int(x.split("/")[-2][4:]))
+    
+    if len(files)>1:
+        return files[:-1]
+    else:
+        return files
 
 
 def str_to_seconds(time_string: str) -> float:
@@ -51,19 +54,21 @@ def format_proc_time(time_table: numpy.ndarray) -> numpy.ndarray:
 
 def get_stats(file_path: str) -> Dict[str, Any]:
     f = h5py.File(file_path, "r")
-    center_theory = numpy.array(f["center"])[:2]
-    center_calc = numpy.array(f["center_calc"])[:2]
-    ref_image_id = list(numpy.array(f["ref_index"]))[:2]
+    center_theory = numpy.array(f["center"])[:]
+    center_calc = numpy.array(f["center_calc"])[:]
+    ref_image_id = list(numpy.array(f["ref_index"]))[:]
     param_value = numpy.array(f["param_value_opt"])
+    #size= numpy.array(f["dimensions"])
+    size=[1475,1679]
 
-    processing_time = numpy.array(f["processing_time"])[:2]
+    processing_time = numpy.array(f["processing_time"])[:]
     processing_time = format_proc_time(processing_time)
 
     err_x_px = abs(center_calc[:, 0] - center_theory[:, 0])
-    rel_err_x = err_x_px / center_theory[:, 0]
+    rel_err_x = err_x_px / size[0]
 
     err_y_px = abs(center_calc[:, 1] - center_theory[:, 1])
-    rel_err_y = err_y_px / center_theory[:, 1]
+    rel_err_y = err_y_px / size[1]
     return {
         "err_x_px": list(err_x_px),
         "err_y_px": list(err_y_px),

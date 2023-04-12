@@ -2,9 +2,10 @@ from typing import List, Optional, Callable, Tuple, Any, Dict
 import numpy as np
 import argparse
 import h5py
+import os
 from multiprocessing import Pool
 import matplotlib.pyplot as plt
-# import fabio
+import fabio
 import math
 import pandas as pd
 from force_center import bring_center_to_point
@@ -283,7 +284,7 @@ def main(raw_args=None):
         "--input",
         type=str,
         action="store",
-        help="path to the cbf data master file",
+        help="path to the data master file",
     )
     # parser.add_argument("-m", "--mask", type=str, action="store",
     #    help="path to the virtual H5 mask file")
@@ -292,7 +293,14 @@ def main(raw_args=None):
         "--art",
         type=str,
         action="store",
-        help="path to the artificial centered image file",
+        help="path to the artificial centered images file",
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        action="store",
+        help="path to the output centered image file",
     )
     parser.add_argument(
         "-g",
@@ -335,11 +343,38 @@ def main(raw_args=None):
     global art_data
     art_data = np.array(f["data"])
     f.close()
+    n_images=art_data.shape[0]
 
-    f = h5py.File(f"{args.input}", "r")
     global raw_data
-    raw_data = np.array(f["data"])[:]
-    f.close()
+
+    file_label, file_extension=os.path.splitext(args.input)
+    print(file_label, file_extension)
+
+    if file_extension=='.lst':
+        gen_images = []
+        center_pos = []
+
+        ## open list file
+        f=open(args.input, 'r')
+        files=f.readlines()
+        total_frames=len(files)
+        f.close()
+        ## choose an image from list
+        image_index = np.random.choice(total_frames, n_images)
+        image_id=[]
+        for i in image_index:
+            file_name=files[i][:-1]
+            data=np.array(fabio.open(f"{file_name}").data)
+            image_id.append(file_name)
+            gen_images.append(data)
+            ## get theoretical center_pos
+            center_pos.append([835,985])
+        raw_data=np.array(gen_images)
+
+    elif file_extension=='.h5':
+        f = h5py.File(f"{args.input}", "r")
+        raw_data = np.array(f["data"])[:]
+        f.close()
 
     global threshold
     threshold = args.thr
@@ -347,7 +382,7 @@ def main(raw_args=None):
     center = []
     proc_time = []
 
-    g = h5py.File(f"{args.input[:-14]}/../gen_images_refs.h5", "r")
+    g = h5py.File(f"{args.art}", "r")
     global ref_index
     ref_index = np.array(g["ref_index"])[:]
     g.close()
@@ -362,6 +397,7 @@ def main(raw_args=None):
     df.sort_values(by="image_number")
     print(df.proc_time)
     """
+    ##no multiprocessing
     for idx, i in enumerate(raw_data):
         obs_data=i
         index=ref_index[idx]
@@ -385,10 +421,19 @@ def main(raw_args=None):
         ["max_generations", f"{df.max_gen.median()}"],
     ]
 
-    f = h5py.File(f"{args.input}", "a")
-    f.create_dataset("center_calc", data=df[["center_x", "center_y"]])
-    f.create_dataset("processing_time", data=list(df.proc_time))
-    f.create_dataset("ref_index", data=ref_index)
+    if file_extension=='.lst':
+        f = h5py.File(f"{args.output}", "w")
+        f.create_dataset("id", data=image_id)
+        f.create_dataset("center", data=center_pos)
+        f.create_dataset("center_calc", data=df[["center_x", "center_y"]])
+        f.create_dataset("processing_time", data=list(df.proc_time))
+        f.create_dataset("ref_index", data=ref_index)
+
+    elif file_extension=='.h5':
+        f = h5py.File(f"{args.output}", "a")
+        f.create_dataset("center_calc", data=df[["center_x", "center_y"]])
+        f.create_dataset("processing_time", data=list(df.proc_time))
+        f.create_dataset("ref_index", data=ref_index)
 
     if args.param == "r":
         f.create_dataset("param_value_opt", data=args.r_ext)

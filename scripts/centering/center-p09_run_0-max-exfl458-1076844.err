@@ -1,0 +1,30 @@
+ERROR: ld.so: object 'libdlfaker.so' from LD_PRELOAD cannot be preloaded: ignored.
+ERROR: ld.so: object 'libvglfaker.so' from LD_PRELOAD cannot be preloaded: ignored.
+ERROR: ld.so: object 'libdlfaker.so' from LD_PRELOAD cannot be preloaded: ignored.
+ERROR: ld.so: object 'libvglfaker.so' from LD_PRELOAD cannot be preloaded: ignored.
+genetic.py:150: RuntimeWarning: invalid value encountered in double_scalars
+  val = 2 * (a[i, j] - b[i, j]) / (a[i, j] + b[i, j])
+genetic.py:150: RuntimeWarning: divide by zero encountered in double_scalars
+  val = 2 * (a[i, j] - b[i, j]) / (a[i, j] + b[i, j])
+genetic.py:150: RuntimeWarning: invalid value encountered in double_scalars
+  val = 2 * (a[i, j] - b[i, j]) / (a[i, j] + b[i, j])
+genetic.py:150: RuntimeWarning: divide by zero encountered in double_scalars
+  val = 2 * (a[i, j] - b[i, j]) / (a[i, j] + b[i, j])
+genetic.py:150: RuntimeWarning: invalid value encountered in double_scalars
+  val = 2 * (a[i, j] - b[i, j]) / (a[i, j] + b[i, j])
+genetic.py:150: RuntimeWarning: divide by zero encountered in double_scalars
+  val = 2 * (a[i, j] - b[i, j]) / (a[i, j] + b[i, j])
+genetic.py:150: RuntimeWarning: invalid value encountered in double_scalars
+  val = 2 * (a[i, j] - b[i, j]) / (a[i, j] + b[i, j])
+genetic.py:150: RuntimeWarning: divide by zero encountered in double_scalars
+  val = 2 * (a[i, j] - b[i, j]) / (a[i, j] + b[i, j])
+genetic.py:150: RuntimeWarning: invalid value encountered in double_scalars
+  val = 2 * (a[i, j] - b[i, j]) / (a[i, j] + b[i, j])
+genetic.py:150: RuntimeWarning: divide by zero encountered in double_scalars
+  val = 2 * (a[i, j] - b[i, j]) / (a[i, j] + b[i, j])
+genetic.py:150: RuntimeWarning: invalid value encountered in double_scalars
+  val = 2 * (a[i, j] - b[i, j]) / (a[i, j] + b[i, j])
+genetic.py:150: RuntimeWarning: divide by zero encountered in double_scalars
+  val = 2 * (a[i, j] - b[i, j]) / (a[i, j] + b[i, j])
+ERROR: ld.so: object 'libdlfaker.so' from LD_PRELOAD cannot be preloaded: ignored.
+ERROR: ld.so: object 'libvglfaker.so' from LD_PRELOAD cannot be preloaded: ignored.
