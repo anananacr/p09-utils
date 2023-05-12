@@ -158,9 +158,8 @@ def calc_distance(a, b):
     count = 0
     for i in range(distance_map.shape[0]):
         for j in range(distance_map.shape[1]):
-            mean += (distance_map[i, j]) ** 2
-            # mean+=abs(distance_map[i,j])
             if distance_map[i, j] != 0:
+                mean += (distance_map[i, j]) ** 2
                 count += 1
     mean /= count
     mean = math.sqrt(mean)
@@ -255,7 +254,7 @@ def run_evolution(
 
 def calc_center_genetic(raw_data_index: int) -> List[Any]:
     obs_data = raw_data[raw_data_index]
-    index = ref_index[raw_data_index]
+    index = ref_index[0]
 
     start = datetime.now()
     max_gen, calc_center = run_evolution(
@@ -286,8 +285,22 @@ def main(raw_args=None):
         action="store",
         help="path to the data master file",
     )
-    # parser.add_argument("-m", "--mask", type=str, action="store",
-    #    help="path to the virtual H5 mask file")
+    parser.add_argument(
+        "-x_t",
+        "--x_t",
+        type=int,
+        default= None,
+        action="store",
+        help="center theoretical in x",
+    )
+    parser.add_argument(
+        "-y_t",
+        "--y_t",
+        type=int,
+        action="store",
+        default= None,
+        help="center theoretical in y",
+    )
     parser.add_argument(
         "-a",
         "--art",
@@ -338,7 +351,7 @@ def main(raw_args=None):
     args = parser.parse_args(raw_args)
 
     file_name = f"{args.input}"
-    # data=np.array(fabio.open(f"{file_name}").data)
+    
     f = h5py.File(f"{args.art}", "r")
     global art_data
     art_data = np.array(f["data"])
@@ -348,9 +361,8 @@ def main(raw_args=None):
     global raw_data
 
     file_label, file_extension=os.path.splitext(args.input)
-    print(file_label, file_extension)
 
-    if file_extension=='.lst':
+    if file_extension[:4]=='.lst':
         gen_images = []
         center_pos = []
 
@@ -362,13 +374,15 @@ def main(raw_args=None):
         ## choose an image from list
         image_index = np.random.choice(total_frames, n_images)
         image_id=[]
-        for i in image_index:
+        #for i in image_index:
+        for i in range(total_frames):
             file_name=files[i][:-1]
             data=np.array(fabio.open(f"{file_name}").data)
             image_id.append(file_name)
             gen_images.append(data)
             ## get theoretical center_pos
-            center_pos.append([835,985])
+            if args.x_t is not None and args.y_t is not None:
+                center_pos.append([args.x_t,args.y_t])
         raw_data=np.array(gen_images)
 
     elif file_extension=='.h5':
@@ -388,7 +402,10 @@ def main(raw_args=None):
     g.close()
 
     raw_data_index = np.arange(0, raw_data.shape[0])
-    with Pool(20) as p:
+    dimensions=[raw_data.shape[2],raw_data.shape[1]]
+    
+    with Pool() as p:
+    #with Pool(total_frames+2) as p:
         result = p.map(calc_center_genetic, raw_data_index)
 
     df = pd.DataFrame(
@@ -396,22 +413,7 @@ def main(raw_args=None):
     )
     df.sort_values(by="image_number")
     print(df.proc_time)
-    """
-    ##no multiprocessing
-    for idx, i in enumerate(raw_data):
-        obs_data=i
-        index=ref_index[idx]
 
-        start=datetime.now()
-        max_gen, calc_center =run_evolution(art_data[index], generate_population, fitness_func, generation_limit = args.generations, r_ext = args.r_ext, fitness_limit=-1*args.lim)
-
-        end=datetime.now()
-
-        time_delta=end-start
-        proc_time.append(str(time_delta))
-        center.append(calc_center)
-    #print(f"Final center: {center}")
-    """
     param_summary = [
         ["r_ext", f"{args.r_ext}"],
         ["g", f"{args.generations}"],
@@ -421,13 +423,15 @@ def main(raw_args=None):
         ["max_generations", f"{df.max_gen.median()}"],
     ]
 
-    if file_extension=='.lst':
+    if file_extension[:4]=='.lst':
         f = h5py.File(f"{args.output}", "w")
         f.create_dataset("id", data=image_id)
-        f.create_dataset("center", data=center_pos)
+        if args.x_t is not None and args.y_t is not None:
+            f.create_dataset("center", data=center_pos)
         f.create_dataset("center_calc", data=df[["center_x", "center_y"]])
         f.create_dataset("processing_time", data=list(df.proc_time))
         f.create_dataset("ref_index", data=ref_index)
+        f.create_dataset("dimensions", data=dimensions)
 
     elif file_extension=='.h5':
         f = h5py.File(f"{args.output}", "a")

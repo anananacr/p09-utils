@@ -1,4 +1,4 @@
-import numpy
+import numpy as np
 import argparse
 import matplotlib.pyplot as plt
 import h5py
@@ -20,29 +20,54 @@ def search_files(
     files = list(
         glob.iglob(rf"{folder_path}/**/{file_name}.{file_format}", recursive=True)
     )
-
+    files=[x for x in files if x.split('/')[-1]!='gen_images_refs.h5']
+    
     if sort == True:
         files = sorted(files, key=lambda x: int(x.split("/")[-2][4:]))
-    
-    if len(files)>1:
-        return files[:-1]
-    else:
-        return files
+    #print(files)
+    return files
+
+def table_of_center(crystal: int, rot: int)-> List[int]:
+    data={'crystal': [1,1,1,1,1,2,2,2,2,2,3,3,3,3,4,4,4,4,5,5],
+        'rot': [1,2,3,4,5,1,2,3,4,5,1,2,3,4,1,2,3,4,1,2],
+        'center_x': [835, 838, 829, 834, 835, 836, 836, 837, 836, 835, 835, 838, 835, 837, 835, 834, 830, 829, 827, 835],
+        'center_y': [985, 974, 971, 965, 955, 920, 919, 917, 886, 877, 869, 844, 825, 816, 802, 787, 777, 766, 758, 753]
+    }
+    df=pd.DataFrame.from_dict(data)
+    match=df.loc[(df['crystal'] == crystal) & (df['rot'] == rot)].reset_index()
+    return [ match['center_x'][0],match['center_y'][0]]
+
+def get_center_theory(files_path: np.ndarray) -> List[int]:
+    center_theory = []
+
+    for i in files_path:
+        
+        label = str(i).split("/")[-1]
+        crystal = int(label.split("_")[0][-2:])
+        rot = int(label.split("_")[1][-3:])
+        #print(crystal, rot)
+        center = table_of_center(crystal, rot)
+        center_theory.append(center)
+    #print(center_theory)
+    center_theory=np.array(center_theory)
+    return center_theory
 
 
 def str_to_seconds(time_string: str) -> float:
     # check format
     r = re.compile(".*:.*:.*.*")
-    if r.match(time_string) is None or len(time_string) != 14:
+    #print(time_string)
+    if r.match(time_string) is None or len(time_string) > 14:
         raise ValueError("Non expected format time (H:MM:SS.UUUUUU)")
 
     hours = int(time_string[0])
-    minutes = int(time_string[2:3])
+    #print(hours)
+    minutes = int(time_string[2:4])
     seconds = float(time_string[5:])
     return 3600 * hours + 60 * minutes + seconds
 
 
-def format_proc_time(time_table: numpy.ndarray) -> numpy.ndarray:
+def format_proc_time(time_table: np.ndarray) -> np.ndarray:
     time_table_in_seconds = []
 
     for i in time_table:
@@ -54,29 +79,40 @@ def format_proc_time(time_table: numpy.ndarray) -> numpy.ndarray:
 
 def get_stats(file_path: str) -> Dict[str, Any]:
     f = h5py.File(file_path, "r")
-    center_theory = numpy.array(f["center"])[:]
-    center_calc = numpy.array(f["center_calc"])[:]
-    ref_image_id = list(numpy.array(f["ref_index"]))[:]
-    param_value = numpy.array(f["param_value_opt"])
-    #size= numpy.array(f["dimensions"])
-    size=[1475,1679]
+    try:
+        center_theory = np.array(f["center"])[:]
+    except:
+        center_theory = get_center_theory(np.array(f["id"]))
+    center_calc = np.array(f["center_calc"])[:]
+    #ref_image_id = list(np.array(f["ref_index"]))[:]
+    ref_image_id = np.zeros(len(center_theory))
+    param_value = float(np.array(f["param_value_opt"]))
+    param_value = np.ones(len(center_theory))*param_value
+    #print(param_value)
+    size= np.array(f["dimensions"])
 
-    processing_time = numpy.array(f["processing_time"])[:]
+    processing_time = np.array(f["processing_time"])[:]
     processing_time = format_proc_time(processing_time)
 
-    err_x_px = abs(center_calc[:, 0] - center_theory[:, 0])
-    rel_err_x = err_x_px / size[0]
+    #err_x_px = abs(center_calc[:, 0] - center_theory[:, 0])
+    #rel_err_x = 100*err_x_px / size[0]
 
-    err_y_px = abs(center_calc[:, 1] - center_theory[:, 1])
-    rel_err_y = err_y_px / size[1]
+    #err_y_px = abs(center_calc[:, 1] - center_theory[:, 1])
+    #rel_err_y = 100*err_y_px / size[1]
+
+    err_x_px = center_calc[:, 0] - center_theory[:, 0]
+    rel_err_x = 100*err_x_px / size[0]
+
+    err_y_px = center_calc[:, 1] - center_theory[:, 1]
+    rel_err_y = 100*err_y_px / size[1]
     return {
         "err_x_px": list(err_x_px),
         "err_y_px": list(err_y_px),
         "rel_err_x": list(rel_err_x),
         "rel_err_y": list(rel_err_y),
         "processing_time": processing_time,
-        "ref_id": ref_image_id,
-        "param_value": param_value,
+        "ref_id": list(ref_image_id),
+        "param_value": list(param_value),
     }
 
 
@@ -88,26 +124,26 @@ def detect_outliers(
     mean = df.mean()
     if cut_percent is None:
         if mean is True:
-            lim_x = [0, mean.err_x_px + cut_px * std.err_x_px]
-            lim_y = [0, mean.err_y_px + cut_px * std.err_y_px]
+            lim_x = [0, mean.abs(err_x_px) + cut_px * std.err_x_px]
+            lim_y = [0, mean.abs(err_y_px) + cut_px * std.err_y_px]
             non_outliers_x = df.err_x_px.between(lim_x[0], lim_x[1])
             non_outliers_y = df.err_y_px.between(lim_y[0], lim_y[1])
         else:
-            lim_x = [0, cut_px]
-            lim_y = [0, cut_px]
+            lim_x = [-1*cut_px, cut_px]
+            lim_y = [-1*cut_px, cut_px]
             non_outliers_x = df.err_x_px.between(lim_x[0], lim_x[1])
             non_outliers_y = df.err_y_px.between(lim_y[0], lim_y[1])
     else:
         if cut_px is not None:
             raise ValueError("Either cut by pixel or percentage.")
         if mean is True:
-            lim_x = [0, mean.rel_err_x + cut_percent * std.rel_err_x]
-            lim_y = [0, mean.rel_err_y + cut_percent * std.rel_err_y]
+            lim_x = [0, mean.abs(rel_err_x) + cut_percent * std.rel_err_x]
+            lim_y = [0, mean.abs(rel_err_y) + cut_percent * std.rel_err_y]
             non_outliers_x = df.rel_err_x.between(lim_x[0], lim_x[1])
             non_outliers_y = df.rel_err_y.between(lim_y[0], lim_y[1])
         else:
-            lim_x = [0, cut_percent]
-            lim_y = [0, cut_percent]
+            lim_x = [-1*cut_percent, cut_percent]
+            lim_y = [-1*cut_percent, cut_percent]
             non_outliers_x = df.rel_err_x.between(lim_x[0], lim_x[1])
             non_outliers_y = df.rel_err_y.between(lim_y[0], lim_y[1])
     outliers_x = ~non_outliers_x
@@ -130,7 +166,7 @@ def generate_individual_plots(
         legend=False,
         color="purple",
         ylabel="Processing time [s]",
-        marker="o",
+        marker=".",
     )
     df.plot(
         y=["ref_id"],
@@ -141,7 +177,7 @@ def generate_individual_plots(
         legend=False,
         color="gray",
         ylabel="Reference image ID",
-        marker="o",
+        marker=".",
     )
     df.plot(
         y=["rel_err_x", "rel_err_y"],
@@ -149,8 +185,8 @@ def generate_individual_plots(
         ax=axes[0, 1],
         grid=True,
         legend=True,
-        ylabel="Absolute relative error",
-        marker="o",
+        ylabel="Absolute relative error [%]",
+        marker=".",
     )
     df.plot(
         y=["err_x_px", "err_y_px"],
@@ -160,7 +196,7 @@ def generate_individual_plots(
         legend=True,
         xlabel="Image ID",
         ylabel="Absolute error [px]",
-        marker="o",
+        marker=".",
     )
     if outliers is not None:
         index_outliers_x = df.index[outliers[0]]
@@ -168,12 +204,7 @@ def generate_individual_plots(
         axes[0, 1].scatter(index_outliers_x, err, marker="x", color="r", s=100)
 
         index_outliers_y = df.index[outliers[1]]
-        print(
-            len(index_outliers_x),
-            index_outliers_x,
-            len(index_outliers_y),
-            index_outliers_y,
-        )
+        
         err = df.rel_err_y[outliers[1]]
         axes[0, 1].scatter(index_outliers_y, err, marker="x", color="r", s=100)
 
@@ -197,6 +228,7 @@ def generate_individual_plots(
 
 
 def generate_individual_hists(df: pd.DataFrame, title: str = None):
+    bins=np.arange(-5.5,5.5,0.5)
     fig, axes = plt.subplots(2, 2)
 
     df.hist(
@@ -218,6 +250,7 @@ def generate_individual_hists(df: pd.DataFrame, title: str = None):
         stacked=False,
         color="gray",
         alpha=0.8,
+        
     )
 
     df.hist(
@@ -227,8 +260,11 @@ def generate_individual_hists(df: pd.DataFrame, title: str = None):
         grid=True,
         legend=False,
         stacked=True,
-        label=["Absolute relative error in y"],
-        alpha=0.8,
+        label=["Relative error in y"],
+        alpha=0.7,
+        rwidth=0.5,
+        width=0.5,
+        bins=bins
     )
     df.hist(
         column=["rel_err_x"],
@@ -237,11 +273,14 @@ def generate_individual_hists(df: pd.DataFrame, title: str = None):
         grid=True,
         legend=False,
         stacked=True,
-        label=["Absolute relative error in x"],
-        alpha=0.8,
-    )
+        label=["Relative error in x"],
+        alpha=0.7,
+        rwidth=0.5,
+        width=0.5,
+        bins=bins
+        )
     fig.legend()
-
+    bins=np.arange(-80,80,4)
     df.hist(
         column=["err_y_px"],
         figsize=(10, 10),
@@ -252,6 +291,9 @@ def generate_individual_hists(df: pd.DataFrame, title: str = None):
         label=["Absolute error in y [px]"],
         color="g",
         alpha=0.7,
+        rwidth=0.5,
+        width=4,
+        bins=bins
     )
     df.hist(
         column=["err_x_px"],
@@ -263,10 +305,24 @@ def generate_individual_hists(df: pd.DataFrame, title: str = None):
         label=["Absolute  error in x [px]"],
         color="r",
         alpha=0.7,
+        rwidth=0.5,
+        width=4,
+        bins=bins
     )
     plt.legend()
     plt.show()
 
+def mergeDictionary(dict_1: Dict[str, float], dict_2: Dict[str, float]) -> Dict[str, float]:
+    merged_dict = {**dict_1, **dict_2}
+    #print(len(merged_dict['err_x_px']))
+    new_list=[]
+    for key, list_of_values in merged_dict.items():
+        if key in dict_1 and key in dict_2 and isinstance(dict_1[key], list):
+            for x in dict_1[key]:
+                list_of_values.append(x)
+        merged_dict[key]=list_of_values
+    #print(len(merged_dict['err_x_px']))
+    return merged_dict
 
 def main(raw_args=None):
     parser = argparse.ArgumentParser(
@@ -279,22 +335,34 @@ def main(raw_args=None):
         action="store",
         help="path to the  HDF5 data file after centering by genetic algorithm.",
     )
+
     args = parser.parse_args(raw_args)
 
     folder_path = f"{args.input}"
     files = search_files(
-        folder_path, file_name="gen_images", file_format="h5", sort=True
+        folder_path, file_name="gen_images*", file_format="h5", sort=True
     )
 
-    stats = get_stats(files[7])
-    df_stats = pd.DataFrame.from_dict(data=stats)
+    merged_stats={"err_x_px": [],
+        "err_y_px": [],
+        "rel_err_x": [],
+        "rel_err_y": [],
+        "processing_time": [],
+        "ref_id": [],
+        "param_value": []}
 
-    title = "test_7"
+    for i in files:
+        stats = get_stats(i)
+        merged_stats=mergeDictionary(stats, merged_stats)
+
+    df_stats = pd.DataFrame.from_dict(data=merged_stats)
+    print(df_stats.param_value[0])
+    title = f"individual_run"
 
     """Detect outliers in individual runs and higlight them in individual plots."""
-    outliers = detect_outliers(df_stats, cut_px=10, cut_percent=None, mean=False)
+    outliers = detect_outliers(df_stats, cut_percent=2, mean=False)
     generate_individual_plots(df_stats, title, outliers)
-
+    generate_individual_hists(df_stats, title)
 
 if __name__ == "__main__":
     main()

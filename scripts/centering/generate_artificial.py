@@ -55,15 +55,22 @@ def generate_reflections(
         Image with reflections.
     """
 
-    index_x = np.arange(0, w)
-    index_y = np.arange(0, h)
+    index_x = np.arange(0, w-0)
+    index_y = np.arange(0, h-0)
     row = np.random.choice(index_y, (n_points, 1))
     column = np.random.choice(index_x, (n_points, 1))
     for i in range(n_points):
-        image[
-            int(row[i] - 1) : int(row[i] + 1), int(column[i] - 1) : int(column[i] + 1)
-        ] = np.random.randint(100, 250)
+        peak_value=np.random.randint(200, 10000)
 
+        image[
+            int(row[i] - 2) : int(row[i] + 3), int(column[i] - 2) : int(column[i] + 3)
+        ] = peak_value/8
+        image[
+            int(row[i] - 1) : int(row[i] + 2), int(column[i] - 1) : int(column[i] + 2)
+        ] = peak_value/4
+        image[
+            int(row[i]), int(column[i])
+        ] = peak_value
     return image
 
 
@@ -141,6 +148,126 @@ def generate_image(
     sim_pattern = generate_reflections(composed_img, n_reflections, h, w)
     return sim_pattern
 
+def generate_image_v1(
+    h: int, w: int
+) -> np.ndarray:
+    """
+    Function that creates an artificial diffraction pattern with dimensios of w x h and background signal defined by r_out, r_in and center.
+
+    Parameters
+    ----------
+    h: int
+        Image heigth in pixels.
+    w: int 
+        Image width in pixels.
+    Returns
+    ----------
+    image: np.ndarray
+        Artificial diffraction pattern.
+    """
+    center=[int(w/2),int(h/2)]
+
+    image = generate_simple(0, 3, h, w)
+
+    signal_r1 = generate_simple(0, 1, h=h, w=w)
+    mask_min = create_circular_mask(h, w, center, radius=0)
+    mask_max = create_circular_mask(h, w, center, radius=22)
+    masked_signal = signal_r1.copy()
+    masked_signal[~mask_max] = 0
+    masked_signal[mask_min] = 0
+    composed_img = image + masked_signal
+
+    signal_r2 = generate_simple(1, 5, h=h, w=w)
+    mask_min = create_circular_mask(h, w, center, radius=22)
+    mask_max = create_circular_mask(h, w, center, radius=200)
+    masked_signal = signal_r2.copy()
+    masked_signal[~mask_max] = 0
+    masked_signal[mask_min] = 0
+    composed_img += masked_signal
+
+    signal_r3 = generate_simple(5, 11, h=h, w=w)
+    mask_min = create_circular_mask(h, w, center, radius=200)
+    mask_max = create_circular_mask(h, w, center, radius=320)
+    masked_signal = signal_r3.copy()
+    masked_signal[~mask_max] = 0
+    masked_signal[mask_min] = 0
+    composed_img += masked_signal
+
+    signal_r4 = generate_simple(1, 5, h=h, w=w)
+    mask_min = create_circular_mask(h, w, center, radius=320)
+    mask_max = create_circular_mask(h, w, center, radius=450)
+    masked_signal = signal_r4.copy()
+    masked_signal[~mask_max] = 0
+    masked_signal[mask_min] = 0
+    composed_img += masked_signal
+
+    n_reflections = np.random.randint(250, 1000)
+    #n_reflections = 0
+    sim_pattern = generate_reflections(composed_img, n_reflections, h, w)
+    return sim_pattern
+
+
+def generate_image_v2(
+    h: int, w: int
+) -> np.ndarray:
+    """
+    Function that creates an artificial diffraction pattern with dimensios of w x h and background signal defined by r_out, r_in and center.
+
+    Parameters
+    ----------
+    h: int
+        Image heigth in pixels.
+    w: int 
+        Image width in pixels.
+    Returns
+    ----------
+    image: np.ndarray
+        Artificial diffraction pattern.
+    """
+    center=[int(w/2),int(h/2)]
+
+    image = generate_simple(0, 3, h, w)
+
+    signal_r1 = generate_simple(0, 1, h=h, w=w)
+    mask_min = create_circular_mask(h, w, center, radius=0)
+    mask_max = create_circular_mask(h, w, center, radius=22)
+    masked_signal = signal_r1.copy()
+    masked_signal[~mask_max] = 0
+    masked_signal[mask_min] = 0
+    composed_img = image + masked_signal
+    
+
+    signal_r2 = generate_simple(1, 5, h=h, w=w)
+    mask_min = create_circular_mask(h, w, center, radius=22)
+    mask_max = create_circular_mask(h, w, center, radius=200)
+    masked_signal = signal_r2.copy()
+    masked_signal[~mask_max] = 0
+    masked_signal[mask_min] = 0
+    composed_img += masked_signal
+
+    signal_r3 = generate_simple(5, 11, h=h, w=w)
+    mask_min = create_circular_mask(h, w, center, radius=200)
+    mask_max = create_circular_mask(h, w, center, radius=320)
+    masked_signal = signal_r3.copy()
+    masked_signal[~mask_max] = 0
+    masked_signal[mask_min] = 0
+    composed_img += masked_signal
+
+    signal_r4 = generate_simple(1, 5, h=h, w=w)
+    mask_min = create_circular_mask(h, w, center, radius=320)
+    mask_max = create_circular_mask(h, w, center, radius=450)
+    masked_signal = signal_r4.copy()
+    masked_signal[~mask_max] = 0
+    masked_signal[mask_min] = 0
+    composed_img += masked_signal
+
+    n_reflections = np.random.randint(250, 1000)
+    #n_reflections = 0
+    sim_pattern = generate_reflections(composed_img, n_reflections, h, w)
+    sim_pattern[center[1]:center[1]+450, center[0]-30:center[0]+30]-=3
+    sim_pattern[np.where(sim_pattern<0)]=0
+
+    return sim_pattern
 
 def main(raw_args=None):
     parser = argparse.ArgumentParser(
