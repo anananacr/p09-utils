@@ -5,7 +5,7 @@ import h5py
 from typing import List, Optional, Callable, Tuple, Any, Dict
 
 
-def generate_simple(low: int, high: int, h: int, w: int) -> np.ndarray:
+def generate_simple(low: int, high: int, h: int, w: int) -> np.array:
     """
     Function that creates a rectangular image with dimensios of h and w and values randomly chosen between low and high.
 
@@ -17,7 +17,7 @@ def generate_simple(low: int, high: int, h: int, w: int) -> np.ndarray:
         Higher intensity value.
     h: int
         Image heigth in pixels.
-    w: int 
+    w: int
         Image width in pixels.
 
     Returns
@@ -32,9 +32,7 @@ def generate_simple(low: int, high: int, h: int, w: int) -> np.ndarray:
     return image
 
 
-def generate_reflections(
-    image: np.ndarray, n_points: int, h: int, w: int
-) -> np.ndarray:
+def generate_reflections(image: np.array, n_points: int, h: int, w: int) -> np.array:
     """
     Function that creates n_points reflections in an input image between the rectangular region with dimensios of h and w.
 
@@ -46,7 +44,7 @@ def generate_reflections(
         Number of reflections.
     h: int
         Heigth in pixels for rectangular region in which reflections will be generated.
-    w: int 
+    w: int
         Width in pixels for rectangular region in which reflections will be generated.
 
     Returns
@@ -55,28 +53,26 @@ def generate_reflections(
         Image with reflections.
     """
 
-    index_x = np.arange(0, w-0)
-    index_y = np.arange(0, h-0)
+    index_x = np.arange(0, w - 0)
+    index_y = np.arange(0, h - 0)
     row = np.random.choice(index_y, (n_points, 1))
     column = np.random.choice(index_x, (n_points, 1))
     for i in range(n_points):
-        peak_value=np.random.randint(200, 10000)
+        peak_value = np.random.randint(200, 10000)
 
         image[
             int(row[i] - 2) : int(row[i] + 3), int(column[i] - 2) : int(column[i] + 3)
-        ] = peak_value/8
+        ] = (peak_value / 8)
         image[
             int(row[i] - 1) : int(row[i] + 2), int(column[i] - 1) : int(column[i] + 2)
-        ] = peak_value/4
-        image[
-            int(row[i]), int(column[i])
-        ] = peak_value
+        ] = (peak_value / 4)
+        image[int(row[i]), int(column[i])] = peak_value
     return image
 
 
 def create_circular_mask(
     h: int, w: int, center: List[int] = None, radius: int = None
-) -> np.ndarray:
+) -> np.array:
     """
     Function that creates a circular mask for an image with dimensions w x h. The circular mask is centered in center and has a radius of radius in pixels.
 
@@ -84,7 +80,7 @@ def create_circular_mask(
     ----------
     h: int
         Heigth in pixels for rectangular region in which reflections will be generated.
-    w: int 
+    w: int
         Width in pixels for rectangular region in which reflections will be generated.
     center: List[int]
         Circular mask center.
@@ -118,7 +114,7 @@ def generate_image(
     ----------
     h: int
         Image heigth in pixels.
-    w: int 
+    w: int
         Image width in pixels.
     r_in: int
         Inner radius of lower background signal.
@@ -148,9 +144,8 @@ def generate_image(
     sim_pattern = generate_reflections(composed_img, n_reflections, h, w)
     return sim_pattern
 
-def generate_image_v1(
-    h: int, w: int
-) -> np.ndarray:
+
+def generate_image_v1(h: int, w: int) -> np.ndarray:
     """
     Function that creates an artificial diffraction pattern with dimensios of w x h and background signal defined by r_out, r_in and center.
 
@@ -158,14 +153,14 @@ def generate_image_v1(
     ----------
     h: int
         Image heigth in pixels.
-    w: int 
+    w: int
         Image width in pixels.
     Returns
     ----------
     image: np.ndarray
         Artificial diffraction pattern.
     """
-    center=[int(w/2),int(h/2)]
+    center = [int(w / 2), int(h / 2)]
 
     image = generate_simple(0, 3, h, w)
 
@@ -202,14 +197,12 @@ def generate_image_v1(
     composed_img += masked_signal
 
     n_reflections = np.random.randint(250, 1000)
-    #n_reflections = 0
+    # n_reflections = 0
     sim_pattern = generate_reflections(composed_img, n_reflections, h, w)
     return sim_pattern
 
 
-def generate_image_v2(
-    h: int, w: int
-) -> np.ndarray:
+def generate_image_v2(h: int, w: int, center: List[int] = None) -> np.array:
     """
     Function that creates an artificial diffraction pattern with dimensios of w x h and background signal defined by r_out, r_in and center.
 
@@ -217,14 +210,15 @@ def generate_image_v2(
     ----------
     h: int
         Image heigth in pixels.
-    w: int 
+    w: int
         Image width in pixels.
     Returns
     ----------
     image: np.ndarray
         Artificial diffraction pattern.
     """
-    center=[int(w/2),int(h/2)]
+    if center is None:
+        center = [int(w / 2), int(h / 2)]
 
     image = generate_simple(0, 3, h, w)
 
@@ -235,7 +229,6 @@ def generate_image_v2(
     masked_signal[~mask_max] = 0
     masked_signal[mask_min] = 0
     composed_img = image + masked_signal
-    
 
     signal_r2 = generate_simple(1, 5, h=h, w=w)
     mask_min = create_circular_mask(h, w, center, radius=22)
@@ -262,16 +255,17 @@ def generate_image_v2(
     composed_img += masked_signal
 
     n_reflections = np.random.randint(250, 1000)
-    #n_reflections = 0
+    # n_reflections = 0
     sim_pattern = generate_reflections(composed_img, n_reflections, h, w)
-    sim_pattern[center[1]:center[1]+450, center[0]-30:center[0]+30]-=3
-    sim_pattern[np.where(sim_pattern<0)]=0
-
+    sim_pattern[center[1] : center[1] + 450, center[0] - 30 : center[0] + 30] -= 3
+    sim_pattern[np.where(sim_pattern < 0)] = 0
+    sim_pattern = np.array(sim_pattern, np.int32)
     return sim_pattern
+
 
 def main(raw_args=None):
     parser = argparse.ArgumentParser(
-        description="Generate an artificial data collection for center finding using genetic.py."
+        description=" DEPRECATED Generate an artificial data collection for center finding using genetic.py."
     )
     parser.add_argument(
         "-n",
@@ -281,7 +275,11 @@ def main(raw_args=None):
         help="Number of sequential images to create.",
     )
     parser.add_argument(
-        "-h_px", "--height", type=int, action="store", help="Height of images in pixels."
+        "-h_px",
+        "--height",
+        type=int,
+        action="store",
+        help="Height of images in pixels.",
     )
     parser.add_argument(
         "-w_px", "--width", type=int, action="store", help="Width of images in pixels."
