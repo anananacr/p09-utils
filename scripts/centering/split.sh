@@ -11,12 +11,12 @@
 #   2016      Steve Aplin <steve.aplin@desy.de>
 #   2016-2017 Thomas White <taw@physics.org>
 
-SPLIT=600
-#SPLIT=100
+#SPLIT=600
+SPLIT=100
 LABEL=$1
 FOLDER=$2
 
-ROOT=/gpfs/cfel/user/rodria/proc/p09_test/moving_beam_5
+ROOT=/gpfs/cfel/user/rodria/proc/p09_test/mov_sim
 INPUT=${ROOT}/lists/${LABEL}.lst
 ERRORDIR=${ROOT}/error
 
@@ -39,11 +39,17 @@ LIM=0.2
 #GEN=15
 #LIM=0.2
 
+#mov_sim
+THR=1
+R=0.98
+GEN=100
+LIM=0
+
 ## parameter in range r_ext
-PARAM='l'
-START=0.2
-STEP=0.02
-END=0.21
+PARAM='t'
+START=0.05
+STEP=0.05
+END=1.01
 RUN=0
 
 ## split list of cbf files in short lists
