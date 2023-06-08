@@ -8,7 +8,9 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as color
 
 
-def bring_center_to_point(data: np.ndarray, center: List[int] = None, point: List[int] = None) -> Union[np.ndarray, List[int]]:
+def bring_center_to_point(
+    data: np.ndarray, center: List[int] = None, point: List[int] = None
+) -> Union[np.ndarray, List[int]]:
     """
     Function shifts data center [xc,yc] to a point [xf,yf], so after transformation [xc,yc] -> [xf,yf]
 
@@ -67,7 +69,7 @@ def bring_center_to_point(data: np.ndarray, center: List[int] = None, point: Lis
     return new_image, shift
 
 
-def diff_from_ref(img:np.ndarray)-> np.ndarray:
+def diff_from_ref(img: np.ndarray) -> np.ndarray:
     """
     Function that calculates the difference of an image with its flipped image in both axis.
 
@@ -100,7 +102,7 @@ def diff_from_ref(img:np.ndarray)-> np.ndarray:
     return diff_map
 
 
-def norm_intensity(img: np.ndarray)-> np.ndarray:
+def norm_intensity(img: np.ndarray) -> np.ndarray:
     """
     Function that normalizes an image intensity.
 
@@ -120,7 +122,7 @@ def norm_intensity(img: np.ndarray)-> np.ndarray:
     return norm
 
 
-def calc_score(img)-> float:
+def calc_score(img) -> float:
     """
     Function that calculates the score of a difference map.
     Parameters
@@ -196,9 +198,7 @@ def main(raw_args=None):
     parser.add_argument(
         "-o", "--output", type=str, action="store", help="Path to the output H5 file."
     )
-    parser.add_argument(
-        "-l", "--label", type=str, action="store", help="Sample label."
-    )
+    parser.add_argument("-l", "--label", type=str, action="store", help="Sample label.")
     args = parser.parse_args(raw_args)
 
     file_name = f"{args.input}"
