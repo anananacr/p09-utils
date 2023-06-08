@@ -8,10 +8,13 @@ from typing import List, Optional, Callable, Tuple, Any, Dict
 import pandas as pd
 from dash_stats import get_stats, detect_outliers, search_files, mergeDictionary
 
-global stacked_data
-stacked_data = None
 
-def get_data_func(files: List[str], func: str) -> pd.DataFrame:
+def get_data_func(
+    files: List[str],
+    func: str,
+    center_file: str = None,
+    loaded_table_center: Dict = None,
+) -> pd.DataFrame:
     if func == "mean":
         function = lambda df: abs(df).mean()
     elif func == "var":
@@ -19,36 +22,38 @@ def get_data_func(files: List[str], func: str) -> pd.DataFrame:
     elif func == "median":
         function = lambda df: abs(df).median()
 
-    merged_stats={"err_x_px": [],
+    merged_stats = {
+        "err_x_px": [],
         "err_y_px": [],
         "rel_err_x": [],
         "rel_err_y": [],
         "processing_time": [],
         "ref_id": [],
-        "param_value": []}
-    last_param=-1
+        "param_value": [],
+    }
+    last_param = -1
     mean_data = []
     std_data = []
 
     for idx, i in enumerate(files):
-        
-        stats = get_stats(i)
-        param_value = stats["param_value"][0]
-        if param_value==last_param or last_param==-1:
-            
-            merged_stats=mergeDictionary(stats, merged_stats)
-            last_param=param_value
 
-        if param_value!=last_param:# or idx==len(files)-1:   
-            
-            
-            df_stats = pd.DataFrame.from_dict(data=(merged_stats))        
+        stats, update_table_center = get_stats(i, center_file, loaded_table_center)
+        if idx == 0:
+            loaded_table_center = update_table_center.copy()
+        param_value = stats["param_value"][0]
+        print(param_value, last_param)
+        if param_value == last_param or last_param == -1:
+            merged_stats = mergeDictionary(stats, merged_stats)
+
+        if param_value != last_param:  # or idx==len(files)-1:
+
+            df_stats = pd.DataFrame.from_dict(data=(merged_stats))
             outliers = detect_outliers(df_stats, cut_percent=2, mean=False)
-            
-            #n_images = len(df_stats.index)
-            
-            n_outliers_x = 100*(outliers[0]).sum() / total_images
-            n_outliers_y = 100*(outliers[1]).sum() / total_images
+
+            # n_images = len(df_stats.index)
+
+            n_outliers_x = 100 * (outliers[0]).sum() / total_images
+            n_outliers_y = 100 * (outliers[1]).sum() / total_images
             mean = function(df_stats)
             std = df_stats.std()
 
@@ -67,17 +72,26 @@ def get_data_func(files: List[str], func: str) -> pd.DataFrame:
             tmp_data_std["param_value"] = param_value
             d = tmp_data_std.columns
             std_data.append(tmp_data_std)
-            last_param=-1
-            merged_stats={}
-            
+            last_param = -1
+            merged_stats = {
+                "err_x_px": [],
+                "err_y_px": [],
+                "rel_err_x": [],
+                "rel_err_y": [],
+                "processing_time": [],
+                "ref_id": [],
+                "param_value": [],
+            }
+        last_param = param_value
     try:
         mean_data = pd.concat(mean_data).reset_index()[c]
         std_data = pd.concat(std_data).reset_index()[d]
-    except(ValueError):
+    except (ValueError):
         mean_data = pd.DataFrame(mean_data).reset_index()[c]
         std_data = pd.DataFrame(std_data).reset_index()[d]
-    
+
     return mean_data, std_data
+
 
 def plot_mean_data(df: pd.DataFrame, func: str, std_data: pd.DataFrame):
     if func == "mean":
@@ -108,8 +122,8 @@ def plot_mean_data(df: pd.DataFrame, func: str, std_data: pd.DataFrame):
     # print(start,stop,step)
     try:
         x_ticks = numpy.arange(start, stop, round(step, 3))
-    except(ValueError):
-        x_ticks = numpy.arange(start, start+1, 1)
+    except (ValueError):
+        x_ticks = numpy.arange(start, start + 1, 1)
     print(std_data)
     print(df)
 
@@ -121,13 +135,14 @@ def plot_mean_data(df: pd.DataFrame, func: str, std_data: pd.DataFrame):
         grid=True,
         legend=False,
         color="purple",
-        ylabel=f"Processing time {label}[s]",
+        # ylabel=f"Processing time {label}[s]",
         marker="o",
         xticks=x_ticks,
-        xlabel=f"{param}"
+        # xlabel=f"{param}"
     )
-    if func=='mean':
-        axes[0, 0].errorbar(x=df["param_value"],
+    if func == "mean":
+        axes[0, 0].errorbar(
+            x=df["param_value"],
             y=df["processing_time"],
             yerr=std_data["processing_time"],
             color="purple",
@@ -141,10 +156,10 @@ def plot_mean_data(df: pd.DataFrame, func: str, std_data: pd.DataFrame):
         grid=True,
         legend=True,
         color=["gray", "lightpink"],
-        xlabel=f"{param}",
-        ylabel=f"Percentage of outliers {label}[%]",
+        # xlabel=f"{param}",
+        # ylabel=f"Percentage of outliers {label}[%]",
         marker="o",
-        xticks=x_ticks
+        xticks=x_ticks,
     )
 
     df.plot(
@@ -154,22 +169,23 @@ def plot_mean_data(df: pd.DataFrame, func: str, std_data: pd.DataFrame):
         ax=axes[0, 1],
         grid=True,
         legend=True,
-        ylabel=f"Absolute relative error {label} [%]",
+        # ylabel=f"Absolute relative error {label} [%]",
         marker="o",
-        xlabel=f"{param}",
-        xticks=x_ticks
-        
+        # xlabel=f"{param}",
+        xticks=x_ticks,
     )
-    if func=='mean':
-        axes[0, 1].errorbar(x=df["param_value"],
+    if func == "mean":
+        axes[0, 1].errorbar(
+            x=df["param_value"],
             y=df["rel_err_x"],
             yerr=std_data["rel_err_x"],
-            color='C0'
+            color="C0",
         )
-        axes[0, 1].errorbar(x=df["param_value"],
+        axes[0, 1].errorbar(
+            x=df["param_value"],
             y=df["rel_err_y"],
             yerr=std_data["rel_err_y"],
-            color='orange'
+            color="orange",
         )
     df.plot(
         x="param_value",
@@ -179,29 +195,31 @@ def plot_mean_data(df: pd.DataFrame, func: str, std_data: pd.DataFrame):
         grid=True,
         legend=True,
         color=["green", "red"],
-        ylabel=f"Absolute error {label} [px]",
-        xlabel=f"{param}",
+        # ylabel=f"Absolute error {label} [px]",
+        # xlabel=f"{param}",
         marker="o",
-        xticks=x_ticks
-        
+        xticks=x_ticks,
     )
-    if func=='mean':
-        axes[1, 1].errorbar(x=df["param_value"],
+    if func == "mean":
+        axes[1, 1].errorbar(
+            x=df["param_value"],
             y=df["err_x_px"],
             yerr=std_data["err_x_px"],
-            color='green'
+            color="green",
         )
-        axes[1, 1].errorbar(x=df["param_value"],
+        axes[1, 1].errorbar(
+            x=df["param_value"],
             y=df["err_y_px"],
             yerr=std_data["err_y_px"],
-            color='red'
+            color="red",
         )
 
-def open_dashboard(files: List[str]):
+
+def open_dashboard(files: List[str], center_file):
 
     func = ["mean", "median"]
     for i in func:
-        mean_data, std_data = get_data_func(files, i)
+        mean_data, std_data = get_data_func(files, i, center_file)
         plot_mean_data(mean_data, i, std_data)
     plt.show()
 
@@ -225,20 +243,31 @@ def main(raw_args=None):
         action="store",
         help="path to the cbf data file list used to optimize.",
     )
-    
+
+    parser.add_argument(
+        "-c",
+        "--center",
+        type=str,
+        action="store",
+        help="path to the cbf data file list used to optimize.",
+    )
+
     args = parser.parse_args(raw_args)
 
     folder_path = f"{args.input}"
     files = search_files(
         folder_path, file_name="gen_images*", file_format="h5", sort=True
     )
-    
+
     global total_images
     with open(args.list) as f:
-        total_images=len(f.readlines())
+        total_images = len(f.readlines())
+    center_file = args.center
+    # print(files)
+    global loaded_table_center
+    loaded_table_center = None
 
-    #print(files)
-    open_dashboard(files)
+    open_dashboard(files, center_file)
 
 
 if __name__ == "__main__":
