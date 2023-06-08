@@ -289,7 +289,7 @@ def main(raw_args=None):
         "-x_t",
         "--x_t",
         type=int,
-        default= None,
+        default=None,
         action="store",
         help="center theoretical in x",
     )
@@ -298,7 +298,7 @@ def main(raw_args=None):
         "--y_t",
         type=int,
         action="store",
-        default= None,
+        default=None,
         help="center theoretical in y",
     )
     parser.add_argument(
@@ -345,47 +345,55 @@ def main(raw_args=None):
         help="path to the output H5 file",
     )
     parser.add_argument(
+        "-id",
+        "--id_param",
+        type=int,
+        default=0,
+        action="store",
+        help="path to the output H5 file",
+    )
+    parser.add_argument(
         "-p", "--param", type=str, action="store", help="path to the output H5 file"
     )
     global args
     args = parser.parse_args(raw_args)
 
     file_name = f"{args.input}"
-    
+
     f = h5py.File(f"{args.art}", "r")
     global art_data
     art_data = np.array(f["data"])
     f.close()
-    n_images=art_data.shape[0]
+    n_images = art_data.shape[0]
 
     global raw_data
 
-    file_label, file_extension=os.path.splitext(args.input)
+    file_label, file_extension = os.path.splitext(args.input)
 
-    if file_extension[:4]=='.lst':
+    if file_extension[:4] == ".lst":
         gen_images = []
         center_pos = []
 
         ## open list file
-        f=open(args.input, 'r')
-        files=f.readlines()
-        total_frames=len(files)
+        f = open(args.input, "r")
+        files = f.readlines()
+        total_frames = len(files)
         f.close()
         ## choose an image from list
         image_index = np.random.choice(total_frames, n_images)
-        image_id=[]
-        #for i in image_index:
+        image_id = []
+        # for i in image_index:
         for i in range(total_frames):
-            file_name=files[i][:-1]
-            data=np.array(fabio.open(f"{file_name}").data)
+            file_name = files[i][:-1]
+            data = np.array(fabio.open(f"{file_name}").data)
             image_id.append(file_name)
             gen_images.append(data)
             ## get theoretical center_pos
             if args.x_t is not None and args.y_t is not None:
-                center_pos.append([args.x_t,args.y_t])
-        raw_data=np.array(gen_images)
+                center_pos.append([args.x_t, args.y_t])
+        raw_data = np.array(gen_images)
 
-    elif file_extension=='.h5':
+    elif file_extension == ".h5":
         f = h5py.File(f"{args.input}", "r")
         raw_data = np.array(f["data"])[:]
         f.close()
@@ -398,14 +406,15 @@ def main(raw_args=None):
 
     g = h5py.File(f"{args.art}", "r")
     global ref_index
-    ref_index = np.array(g["ref_index"])[:]
+    # ref_index = np.array(g["ref_index"])[:]
+    ref_index = [0]
     g.close()
 
     raw_data_index = np.arange(0, raw_data.shape[0])
-    dimensions=[raw_data.shape[2],raw_data.shape[1]]
-    
+    dimensions = [raw_data.shape[2], raw_data.shape[1]]
+
     with Pool() as p:
-    #with Pool(total_frames+2) as p:
+        # with Pool(total_frames+2) as p:
         result = p.map(calc_center_genetic, raw_data_index)
 
     df = pd.DataFrame(
@@ -419,11 +428,12 @@ def main(raw_args=None):
         ["g", f"{args.generations}"],
         ["thr", f"{args.thr}"],
         ["fitness_limit", f"{args.lim}"],
+        ["id_param", f"{args.id_param}"],
         ["opt_param", f"{args.param}"],
         ["max_generations", f"{df.max_gen.median()}"],
     ]
 
-    if file_extension[:4]=='.lst':
+    if file_extension[:4] == ".lst":
         f = h5py.File(f"{args.output}", "w")
         f.create_dataset("id", data=image_id)
         if args.x_t is not None and args.y_t is not None:
@@ -433,7 +443,7 @@ def main(raw_args=None):
         f.create_dataset("ref_index", data=ref_index)
         f.create_dataset("dimensions", data=dimensions)
 
-    elif file_extension=='.h5':
+    elif file_extension == ".h5":
         f = h5py.File(f"{args.output}", "a")
         f.create_dataset("center_calc", data=df[["center_x", "center_y"]])
         f.create_dataset("processing_time", data=list(df.proc_time))
@@ -447,6 +457,8 @@ def main(raw_args=None):
         f.create_dataset("param_value_opt", data=args.generations)
     elif args.param == "l":
         f.create_dataset("param_value_opt", data=args.lim)
+    elif args.param == "id":
+        f.create_dataset("param_value_opt", data=args.id_param)
 
     f.create_dataset("genetic_param", data=param_summary)
     f.close()
