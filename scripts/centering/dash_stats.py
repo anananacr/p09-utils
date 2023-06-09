@@ -22,10 +22,10 @@ def search_files(
         glob.iglob(rf"{folder_path}/**/{file_name}.{file_format}", recursive=True)
     )
     files = [x for x in files if x.split("/")[-1] != "gen_images_refs.h5"]
-    print(files)
+    
     if sort == True:
         files = sorted(files, key=lambda x: int(x.split("/")[-2][4:]))
-    print(files)
+    # print(files)
     return files
 
 
@@ -470,7 +470,7 @@ def main(raw_args=None):
         "param_value": [],
     }
     loaded_table_center: Dict = None
-    center_file = args.center
+    center_file=args.center
     for idx, i in enumerate(files):
         stats, update_table_center = get_stats(i, center_file, loaded_table_center)
         if idx == 0:
