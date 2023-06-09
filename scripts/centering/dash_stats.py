@@ -22,11 +22,10 @@ def search_files(
         glob.iglob(rf"{folder_path}/**/{file_name}.{file_format}", recursive=True)
     )
     files = [x for x in files if x.split("/")[-1] != "gen_images_refs.h5"]
-
+    print(files)
     if sort == True:
-
         files = sorted(files, key=lambda x: int(x.split("/")[-2][4:]))
-    # print(files)
+    print(files)
     return files
 
 
@@ -446,12 +445,19 @@ def main(raw_args=None):
         action="store",
         help="path to the  HDF5 data file after centering by genetic algorithm.",
     )
+    parser.add_argument(
+        "-c",
+        "--center",
+        type=str,
+        action="store",
+        help="path to the cbf data file list used to optimize.",
+    )
 
     args = parser.parse_args(raw_args)
 
     folder_path = f"{args.input}"
     files = search_files(
-        folder_path, file_name="gen_images*", file_format="h5", sort=True
+        folder_path, file_name="gen_images*_1367", file_format="h5", sort=False
     )
 
     merged_stats = {
@@ -463,9 +469,12 @@ def main(raw_args=None):
         "ref_id": [],
         "param_value": [],
     }
-
-    for i in files:
-        stats = get_stats(i)
+    loaded_table_center: Dict = None
+    center_file = args.center
+    for idx, i in enumerate(files):
+        stats, update_table_center = get_stats(i, center_file, loaded_table_center)
+        if idx == 0:
+            loaded_table_center = update_table_center.copy()
         merged_stats = mergeDictionary(stats, merged_stats)
 
     df_stats = pd.DataFrame.from_dict(data=merged_stats)
@@ -473,7 +482,7 @@ def main(raw_args=None):
     title = f"individual_run"
 
     """Detect outliers in individual runs and higlight them in individual plots."""
-    outliers = detect_outliers(df_stats, cut_percent=2, mean=False)
+    outliers = detect_outliers(df_stats, cut_percent=0.05, mean=False)
     generate_individual_plots(df_stats, title, outliers)
     generate_individual_hists(df_stats, title)
 
