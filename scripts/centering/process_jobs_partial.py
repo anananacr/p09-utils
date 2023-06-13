@@ -24,7 +24,7 @@ def search_files_filtered(
         file_format = "*"
 
     files = list(
-        glob.iglob(rf"{folder_path}/**/{file_name}.{file_format}", recursive=True)
+        glob.iglob(rf"{folder_path}/{file_name}.{file_format}", recursive=True)
     )
     files = [x for x in files if x.split("/")[-1] != "gen_images_refs.h5"]
     if sort == True:
@@ -50,6 +50,11 @@ def exclude_processed_data(files: List[str], label_output_file: str) -> List[str
     files_to_process = [
         x for idx, x in enumerate(files) if id_to_process[idx] not in df.values
     ]
+    print(
+        f"Files to process: {len(files_to_process)}\nAlready processed Files:{len(files)-len(files_to_process)}"
+    )
+    excluded_files = [x for x in files if x not in files_to_process]
+    print(excluded_files)
     return files_to_process
 
 
@@ -85,12 +90,16 @@ def exclude_incomplete_data(files: List[str]) -> List[str]:
         if last_id == id_to_process[idx]:
             count += 1
         else:
-            if count == 4:
+            if count == 9:
                 while count > 0:
-                    files_to_process.append(files[idx + count - 5])
+                    files_to_process.append(files[idx + count - 10])
                     count -= 1
         last_id = id_to_process[idx]
-    # print(files_to_process)
+    print(
+        f"Files to process: {len(files_to_process)}\nIncomplete Files:{len(files)-len(files_to_process)}"
+    )
+    incomplete_files = [x for x in files if x not in files_to_process]
+    print(incomplete_files)
     return files_to_process
 
 
@@ -134,7 +143,7 @@ def get_data_func(
         if param_value != last_param:  # or idx==len(files)-1:
 
             df_stats = pd.DataFrame.from_dict(data=(merged_stats))
-            outliers = detect_outliers(df_stats, cut_percent=2, mean=False)
+            outliers = detect_outliers(df_stats, cut_percent=0.5, mean=False)
 
             # n_images = len(df_stats.index)
 
