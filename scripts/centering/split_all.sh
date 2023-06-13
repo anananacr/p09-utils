@@ -11,30 +11,30 @@
 #   
 
 #SPLIT=600
-SPLIT=200
+SPLIT=100
 LABEL=$1
 FOLDER=$2
 
 ROOT=/gpfs/cfel/user/rodria/proc/p09_test/mov_sim
 INPUT=${ROOT}/lists/${LABEL}.lst
-ERRORDIR=${ROOT}/error_all_re
+ERRORDIR=${ROOT}/error
 
 ### range param
-t_min=0.1
-t_max=1.00
-t_step=0.1
+t_min=0.4
+t_max=0.61
+t_step=0.02
 
-r_min=0.2
-r_max=1.00
-r_step=0.1
+r_min=0.4
+r_max=0.81
+r_step=0.05
 
-g_min=2
-g_max=102
-g_step=10
+g_min=5
+g_max=51
+g_step=5
 
-l_min=0
-l_max=1.00
-l_step=0.1
+l_min=0.05
+l_max=0.36
+l_step=0.05
 
 COUNT=0
 COUNT_JOB=0
@@ -58,8 +58,8 @@ SLURMFILE="${NAME}_${COUNT_JOB}.sh"
 echo "#!/bin/sh" > $SLURMFILE
 echo >> $SLURMFILE
 
-echo "#SBATCH --partition=allcpu" >> $SLURMFILE  # Set your partition here
-echo "#SBATCH --time=2-23:00:00" >> $SLURMFILE
+echo "#SBATCH --partition=allcpu,upex" >> $SLURMFILE  # Set your partition here
+echo "#SBATCH --time=1-23:00:00" >> $SLURMFILE
 echo "#SBATCH --requeue" >> $SLURMFILE
 
 echo "#SBATCH --nodes=1" >> $SLURMFILE
@@ -79,6 +79,9 @@ echo "source /etc/profile.d/modules.sh" >> $SLURMFILE
 echo "source /home/rodria/scripts/p09/env-p09/bin/activate" >> $SLURMFILE
 echo >> $SLURMFILE
 
+RUN_FILE="run_jobs_200_400.sh"
+
+echo "#!/bin/sh" > $RUN_FILE
 for g in $(seq $g_min $g_step $g_max); do
     for r in $(seq $r_min $r_step $r_max); do
         for t in $(seq $t_min $t_step $t_max); do
@@ -92,17 +95,20 @@ for g in $(seq $g_min $g_step $g_max); do
                     command="$command  -g ${g} -r ${r} -t ${t} -l ${l} -id ${ID}"
                     echo $command >> $SLURMFILE
                     COUNT=$((COUNT+1))
-                    if [ $COUNT -eq 10 ]
+                    if [ $COUNT -eq 20 ]
                     then
                         
                         echo "chmod a+rw $PWD" >> $SLURMFILE
-                        if [ ${COUNT_JOB} -ge 4000 ] && [ ${COUNT_JOB} -lt 4400 ]
+                        if [ ${COUNT_JOB} -ge 200 ] && [ ${COUNT_JOB} -lt 400 ]
                         then
+                            echo  "sbatch $ROOT/shell/$SLURMFILE;">> $RUN_FILE
                             #sbatch --test-only $SLURMFILE
-                            sbatch $SLURMFILE    
+                            #sbatch $SLURMFILE
+                        else
+                            :
                         fi
                         
-                        mv $SLURMFILE ../shell
+                        mv $SLURMFILE $ROOT/shell
                         COUNT=0
                         COUNT_JOB=$((COUNT_JOB+1))
                         ### init next slurm file
@@ -122,8 +128,8 @@ for g in $(seq $g_min $g_step $g_max); do
                         echo "#!/bin/sh" > $SLURMFILE
                         echo >> $SLURMFILE
 
-                        echo "#SBATCH --partition=allcpu" >> $SLURMFILE  # Set your partition here
-                        echo "#SBATCH --time=2-23:00:00" >> $SLURMFILE
+                        echo "#SBATCH --partition=allcpu,upex" >> $SLURMFILE  # Set your partition here
+                        echo "#SBATCH --time=1-23:00:00" >> $SLURMFILE
                         echo "#SBATCH --requeue" >> $SLURMFILE
 
                         echo "#SBATCH --nodes=1" >> $SLURMFILE
@@ -156,5 +162,5 @@ done
 echo "chmod a+rw $PWD" >> $SLURMFILE
 #sbatch --test-only $SLURMFILE
 #sbatch $SLURMFILE
-mv $SLURMFILE ../shell
+mv $SLURMFILE $ROOT/shell/
 
