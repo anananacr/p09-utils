@@ -285,22 +285,7 @@ def main(raw_args=None):
         action="store",
         help="path to the data master file",
     )
-    parser.add_argument(
-        "-x_t",
-        "--x_t",
-        type=int,
-        default=None,
-        action="store",
-        help="center theoretical in x",
-    )
-    parser.add_argument(
-        "-y_t",
-        "--y_t",
-        type=int,
-        action="store",
-        default=None,
-        help="center theoretical in y",
-    )
+    
     parser.add_argument(
         "-a",
         "--art",
@@ -388,9 +373,6 @@ def main(raw_args=None):
             data = np.array(fabio.open(f"{file_name}").data)
             image_id.append(file_name)
             gen_images.append(data)
-            ## get theoretical center_pos
-            if args.x_t is not None and args.y_t is not None:
-                center_pos.append([args.x_t, args.y_t])
         raw_data = np.array(gen_images)
 
     elif file_extension == ".h5":
