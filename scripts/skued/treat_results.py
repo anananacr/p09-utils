@@ -7,7 +7,7 @@ import pandas as pd
 
 def main(raw_args=None):
     parser = argparse.ArgumentParser(
-        description="Find center of lysozyme patterns in CBF images from Pilatus 2M at P09-PETRA."
+        description="Hyperparameters grid-search optmization analysis for peakfinder8 optimization"
     )
     parser.add_argument(
         "-i",
@@ -21,7 +21,7 @@ def main(raw_args=None):
         "--param",
         type=str,
         action="store",
-        help="path to the  HDF5 data file after centering by genetic algorithm.",
+        help="path to the combination of parameters text file.",
     )
 
     args = parser.parse_args(raw_args)
