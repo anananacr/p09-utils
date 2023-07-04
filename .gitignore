@@ -15,3 +15,14 @@ scripts/centering/run_jobs_200_400.sh
 scripts/centering/output
 doc/commands
 
+scripts/skued/__pycache__/utils.cpython-310.pyc
+scripts/skued/__pycache__/models.cpython-310.pyc
+scripts/skued/__pycache__/utils.cpython-37.pyc
+scripts/skued/__pycache__/models.cpython-37.pyc
+.gitignore
+scripts/centering/__pycache__/dash_stats.cpython-310.pyc
+scripts/centering/__pycache__/dash_stats.cpython-36.pyc
+.gitignore
+.gitignore
+scripts/centering/__pycache__/dash_stats.cpython-36.pyc
+scripts/centering/__pycache__/dash_stats.cpython-36.pyc
