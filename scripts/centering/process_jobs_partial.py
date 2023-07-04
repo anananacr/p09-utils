@@ -227,6 +227,7 @@ def main(raw_args=None):
         "--center",
         type=str,
         action="store",
+        default=None,
         help="path to the cbf data file list used to optimize.",
     )
 
