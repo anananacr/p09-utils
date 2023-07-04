@@ -33,17 +33,37 @@ def main(raw_args=None):
     df.dropna(inplace=True)
     df.reset_index(drop=True, inplace=True)
 
+    ####
+    # copy std parameters
+    file_path=f"{args.input[:-4]}_std.csv"
+    df_std = pd.read_csv(
+       file_path, usecols=["rel_err_x", "rel_err_y", "processing_time", "param_value"]
+    )
+
+    df_std.dropna(inplace=True)
+    df_std.reset_index(drop=True, inplace=True)
+    df_std.columns=["rel_err_x_std", "rel_err_y_std", "processing_time_std", "param_value_std"]
+    if df_std.param_value_std.equals(df.param_value):
+        
+        df =pd.concat([df,df_std], axis = 1)
+    #print(df)
+
+    ####
+
     # df.plot(kind="scatter", x="rel_err_x", y="rel_err_y")
     # plt.show()
 
     file_path = f"{args.param}"
     df_id = pd.read_csv(file_path)
 
+
+
     merged_df = pd.DataFrame({"g": [], " r": [], " t": [], " l": []})
     for i in df.param_value[:]:
         param = df_id.iloc[[int(i)], [0, 1, 2, 3]]
         merged_df = pd.concat([merged_df, param], ignore_index=True)
     final_df = pd.concat([df, merged_df], axis=1, ignore_index=False)
+    print(final_df.head())
 
     x = np.array(final_df.rel_err_x)
     y = np.array(final_df.rel_err_y)
@@ -64,14 +84,36 @@ def main(raw_args=None):
     z_cut = z[selected_index]
     id_cut = param_value[selected_index]
 
-    selected_index_2 = np.where((x < 0.06) & (y < 0.06) & (z < 1000))
+    selected_index_2 = np.where((x < 0.06) & (y < 0.06) & (z < 3000))
     print(id_cut)
 
     gen_cut = param_value_g[selected_index_2]
     print(gen_cut)
-    ax.scatter(x_cut, y_cut, z_cut, marker="o", color="red")
+    #print('rel_err_x', x[selected_index_2])
+    #print('rel_err_y', y[selected_index_2])
 
-    plt.show()
+
+    x_std = np.array(final_df.rel_err_x_std)
+    y_std = np.array(final_df.rel_err_y_std)
+    #print('rel_err_x_std', x_std[selected_index_2])
+    #print('rel_err_y_std', y_std[selected_index_2])
+    
+    id_cut = np.array(final_df.param_value)
+
+    best_id=pd.DataFrame({
+        "rel_err_x": x[selected_index_2],
+        "rel_err_y": y[selected_index_2],
+        "rel_err_x_std": x_std[selected_index_2],
+        "rel_err_y_std": y_std[selected_index_2],
+        "id": id_cut[selected_index_2]
+    })
+    print(best_id)
+    for i in best_id.keys()[:-1]:
+        print(best_id.sort_values(i).index)
+    #ax.scatter(x_cut, y_cut, z_cut, marker="o", color="red")
+    best_combination=int(best_id.id.iloc[21])
+    print(final_df.loc[final_df.param_value == best_combination])
+    #plt.show()
     
 
 
