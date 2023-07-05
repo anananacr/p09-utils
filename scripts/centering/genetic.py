@@ -283,9 +283,9 @@ def main(raw_args=None):
         "--input",
         type=str,
         action="store",
-        help="path to the data master file",
+        help="path to the list file of input data.",
     )
-    
+
     parser.add_argument(
         "-a",
         "--art",
@@ -335,10 +335,10 @@ def main(raw_args=None):
         type=int,
         default=0,
         action="store",
-        help="path to the output H5 file",
+        help="path to the output HDF5 file",
     )
     parser.add_argument(
-        "-p", "--param", type=str, action="store", help="path to the output H5 file"
+        "-p", "--param", type=str, action="store", help="adjusting parameter label"
     )
     global args
     args = parser.parse_args(raw_args)

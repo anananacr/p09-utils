@@ -58,7 +58,7 @@ def table_of_center(
                     826,
                     825,
                     823,
-                    831
+                    831,
                 ],
                 "center_y": [
                     993,
@@ -436,21 +436,21 @@ def mergeDictionary(
 
 def main(raw_args=None):
     parser = argparse.ArgumentParser(
-        description="Find center of lysozyme patterns in CBF images from Pilatus 2M at P09-PETRA."
+        description="Dashboard to analyse statistics of centering algorithms."
     )
     parser.add_argument(
         "-i",
         "--input",
         type=str,
         action="store",
-        help="path to the  HDF5 data file after centering by genetic algorithm.",
+        help="path to the  HDF5 file after centering by genetic algorithm.",
     )
     parser.add_argument(
         "-c",
         "--center",
         type=str,
         action="store",
-        help="path to the cbf data file list used to optimize.",
+        help="list of real center positions to compare algorithm performance.",
     )
 
     args = parser.parse_args(raw_args)
