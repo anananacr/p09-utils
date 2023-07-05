@@ -15,21 +15,22 @@ from multiprocessing import Pool
 from datetime import datetime
 import pandas as pd
 import sys
+
 sys.path.append("../centering/")
 from dash_stats import get_center_theory
 
 
 def mask_peaks_and_calc_center(raw_data_index: int) -> List[Any]:
     data = raw_data[raw_data_index]
-    
+
     xds_mask = mask_data[raw_data_index]
     xds_mask[np.where(xds_mask <= 0)] = 0
     xds_mask[np.where(xds_mask > 0)] = 1
-    pf8_info_mask=pf8_info.copy_and_modify_mask(xds_mask)
-    center_theory=center_theory_table[raw_data_index]
+    pf8_info_mask = pf8_info.copy_and_modify_mask(xds_mask)
+    center_theory = center_theory_table[raw_data_index]
     pf8_info_mask.modify_radius(center_x=center_theory[0], center_y=center_theory[1])
     pf8 = PF8(pf8_info_mask)
-    
+
     start = datetime.now()
 
     peak_list = pf8.get_peaks_pf8(data=data)
@@ -37,7 +38,7 @@ def mask_peaks_and_calc_center(raw_data_index: int) -> List[Any]:
         np.array(peak_list["ss"], dtype=int),
         np.array(peak_list["fs"], dtype=int),
     )
-    
+
     surrounding_positions = []
 
     for index in zip(indices[0], indices[1]):
@@ -50,7 +51,7 @@ def mask_peaks_and_calc_center(raw_data_index: int) -> List[Any]:
     if args.bragg == 1:
         surrounding_mask = np.zeros_like(xds_mask)
         for pos in surrounding_positions:
-            
+
             row, col = pos
             if 0 <= row < xds_mask.shape[0] and 0 <= col <= xds_mask.shape[1]:
                 surrounding_mask[row, col] = 1
@@ -62,20 +63,20 @@ def mask_peaks_and_calc_center(raw_data_index: int) -> List[Any]:
             row, col = pos
             if 0 <= row < xds_mask.shape[0] and 0 <= col <= xds_mask.shape[1]:
                 surrounding_mask[row, col] = 0
-        
+
     mask = surrounding_mask
     mask[np.where(xds_mask == 0)] = 0
     mask[np.where(data > args.hot_pixels_value)] = 0
 
-    if args.auto==1:
+    if args.auto == 1:
         y, x = autocenter(data, mask)
         y = int(y)
         x = int(x)
     else:
-        #center of mass
-        x,y = proc2d.center_of_mass(data*mask)
-        y=int(y)
-        x=int(x)
+        # center of mass
+        x, y = proc2d.center_of_mass(data * mask)
+        y = int(y)
+        x = int(x)
 
     end = datetime.now()
 
@@ -90,10 +91,18 @@ def main():
         description="Calculate center of diffraction patterns using pf8 + autocenter/diffractem"
     )
     parser.add_argument(
-        "-i", "--input", type=str, action="store", help="path to list of data files .lst"
+        "-i",
+        "--input",
+        type=str,
+        action="store",
+        help="path to list of data files .lst",
     )
     parser.add_argument(
-        "-center", "--center", type=str, action="store", help="path to list of theoretical center positions file in .txt"
+        "-center",
+        "--center",
+        type=str,
+        action="store",
+        help="path to list of theoretical center positions file in .txt",
     )
     parser.add_argument(
         "-m", "--mask", type=str, action="store", help="path to list of mask files .lst"
@@ -102,7 +111,11 @@ def main():
         "-o", "--output", type=str, action="store", help="path to output data files"
     )
     parser.add_argument(
-        "-b", "--bragg", type=float, action="store", help="analyse bragg peaks and/or background"
+        "-b",
+        "--bragg",
+        type=float,
+        action="store",
+        help="analyse bragg peaks and/or background",
     )
     parser.add_argument(
         "-t",
@@ -133,7 +146,11 @@ def main():
         help="peakfinder8 parameter local_bg_radius",
     )
     parser.add_argument(
-        "-n", "--box_size", type=int, action="store", help="number of pixels of the box around the peak from -n to n"
+        "-n",
+        "--box_size",
+        type=int,
+        action="store",
+        help="number of pixels of the box around the peak from -n to n",
     )
     parser.add_argument(
         "-v",
@@ -160,7 +177,7 @@ def main():
     )
     global args
     args = parser.parse_args()
-    
+
     files = open(args.input, "r")
     paths = files.readlines()
     files.close()
@@ -174,15 +191,15 @@ def main():
 
     global center_theory_table
     center_theory_table, loaded_table = get_center_theory(paths, args.center)
-    #print(center_theory_table)
-    
+    # print(center_theory_table)
+
     file_format = get_format(args.input)
     if file_format == "lst":
         frames = []
         masks = []
         center_pos = []
         image_id = []
-        total_frames = len(paths)        
+        total_frames = len(paths)
 
         # for i in image_index:
         for i in range(total_frames):
@@ -204,7 +221,10 @@ def main():
         pf8_info = PF8Info(
             max_num_peaks=10000,
             pf8_detector_info=dict(
-                asic_nx=xds_mask.shape[1], asic_ny=xds_mask.shape[0], nasics_x=1, nasics_y=1
+                asic_nx=xds_mask.shape[1],
+                asic_ny=xds_mask.shape[0],
+                nasics_x=1,
+                nasics_y=1,
             ),
             adc_threshold=args.adc_threshold,
             minimum_snr=args.minimum_snr,
@@ -213,18 +233,17 @@ def main():
             local_bg_radius=args.local_bg_radius,
             min_res=0,
             max_res=1200,
-            _bad_pixel_map=xds_mask
+            _bad_pixel_map=xds_mask,
         )
 
     raw_data_index = np.arange(0, raw_data.shape[0])
-    
+
     dimensions = [raw_data.shape[2], raw_data.shape[1]]
     with Pool() as p:
         result = p.map(mask_peaks_and_calc_center, raw_data_index)
-    
-    
+
     df = pd.DataFrame(
-        result,  columns=["image_number", "proc_time", "center_x", "center_y"]
+        result, columns=["image_number", "proc_time", "center_x", "center_y"]
     )
     df.sort_values(by="image_number")
     print(df.proc_time)

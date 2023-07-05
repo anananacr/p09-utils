@@ -32,27 +32,35 @@ class PF8Info:
     def __post_init__(self):
         print(self._bad_pixel_map.shape)
         self._pixelmaps = build_pixel_map(
-            (self._bad_pixel_map).shape[0], (self._bad_pixel_map.shape[1]), int((self._bad_pixel_map).shape[0]/2) , int((self._bad_pixel_map).shape[1]/2)
+            (self._bad_pixel_map).shape[0],
+            (self._bad_pixel_map.shape[1]),
+            int((self._bad_pixel_map).shape[0] / 2),
+            int((self._bad_pixel_map).shape[1] / 2),
         )
 
     def copy_and_modify_mask(self, mask):
         pf8_info_modified = PF8Info(
-        max_num_peaks = self.max_num_peaks,
-        pf8_detector_info = self.pf8_detector_info,
-        adc_threshold = self.adc_threshold,
-        minimum_snr = self.minimum_snr,
-        min_pixel_count = self.min_pixel_count,
-        max_pixel_count = self.max_pixel_count,
-        local_bg_radius = self.local_bg_radius,
-        min_res = self.min_res,
-        max_res = self.max_res,
-        _bad_pixel_map = mask
+            max_num_peaks=self.max_num_peaks,
+            pf8_detector_info=self.pf8_detector_info,
+            adc_threshold=self.adc_threshold,
+            minimum_snr=self.minimum_snr,
+            min_pixel_count=self.min_pixel_count,
+            max_pixel_count=self.max_pixel_count,
+            local_bg_radius=self.local_bg_radius,
+            min_res=self.min_res,
+            max_res=self.max_res,
+            _bad_pixel_map=mask,
         )
         return pf8_info_modified
 
-    def modify_radius(self, center_x,center_y):
+    def modify_radius(self, center_x, center_y):
         self._pixelmaps = build_pixel_map(
-            (self._bad_pixel_map).shape[0], (self._bad_pixel_map.shape[1]), center_y , center_x)
+            (self._bad_pixel_map).shape[0],
+            (self._bad_pixel_map.shape[1]),
+            center_y,
+            center_x,
+        )
+
 
 """
 class PF8:

@@ -21,7 +21,11 @@ def main():
         "-m", "--mask", type=str, action="store", help="path to list of mask files"
     )
     parser.add_argument(
-        "-b", "--bragg", type=int, action="store", help="analyse bragg peaks and/or background"
+        "-b",
+        "--bragg",
+        type=int,
+        action="store",
+        help="analyse bragg peaks and/or background",
     )
     args = parser.parse_args()
     print(args)
