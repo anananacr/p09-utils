@@ -143,7 +143,7 @@ def get_center_theory(
         # print(label)
         # crystal = int(label.split("_")[0][-2:])
         # rot = int(label.split("_")[1][-3:])
-        crystal = int(label.split("_")[-3][:])
+        crystal = int(label.split("_")[-3][-2:])
         rot = int(label.split("_")[-2][:])
         # print(crystal, rot)
         center, loaded_table_center = table_of_center(
