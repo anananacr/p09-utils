@@ -91,7 +91,7 @@ echo "#SBATCH --error     $ERRORDIR/${NAME}_${COUNT_JOB}-%N-%j.err" >> $SLURMFIL
 echo >> $SLURMFILE
 
 echo "source /etc/profile.d/modules.sh" >> $SLURMFILE
-echo "module load maxwell python/3.10" >> $SLURMFILE
+echo "module load maxwell python/3.7" >> $SLURMFILE
 echo "source /home/rodria/software/env-skiued/bin/activate" >> $SLURMFILE
 echo >> $SLURMFILE
 
@@ -116,7 +116,7 @@ for s in $(seq $s_min $s_step $s_max); do
                             then
                                 
                                 echo "chmod a+rw $PWD" >> $SLURMFILE
-                                if [ ${COUNT_JOB} -ge 0 ] && [ ${COUNT_JOB} -lt 200 ]
+                                if [ ${COUNT_JOB} -ge 0 ] && [ ${COUNT_JOB} -lt 2450 ]
                                 then
                                     
                                     echo  "sbatch $ROOT/shell/$SLURMFILE;">> $RUN_FILE
@@ -167,7 +167,7 @@ for s in $(seq $s_min $s_step $s_max); do
                                 echo >> $SLURMFILE
 
                                 echo "source /etc/profile.d/modules.sh" >> $SLURMFILE
-                                echo "module load maxwell python/3.10" >> $SLURMFILE
+                                echo "module load maxwell python/3.7" >> $SLURMFILE
                                 echo "source /home/rodria/software/env-skiued/bin/activate" >> $SLURMFILE
                                 echo >> $SLURMFILE
 
