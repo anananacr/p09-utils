@@ -51,3 +51,7 @@ scripts/skued/split-events-lyso_auto.lst006
 scripts/skued/split-events-lyso_auto.lst007
 scripts/skued/split-events-lyso_auto.lst008
 scripts/skued/split-events-lyso_auto.lst009
+scripts/skued/output
+scripts/centering/run_jobs_lyso_6800_6930.sh
+.gitignore
+scripts/skued/run_jobs_lyso_auto_200_400.sh
