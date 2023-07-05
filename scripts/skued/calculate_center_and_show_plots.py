@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.10
+#!/usr/bin/env python3.7
 #!module load crystfel
 import sys
 from skued import autocenter, azimuthal_average
