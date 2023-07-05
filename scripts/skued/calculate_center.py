@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.10
+#!/usr/bin/env python3.7
 
 from typing import List, Optional, Callable, Tuple, Any, Dict
 import sys
@@ -23,12 +23,13 @@ def mask_peaks_and_calc_center(raw_data_index: int) -> List[Any]:
     data = raw_data[raw_data_index]
     
     xds_mask = mask_data[raw_data_index]
-    
+    xds_mask[np.where(xds_mask <= 0)] = 0
+    xds_mask[np.where(xds_mask > 0)] = 1
     pf8_info_mask=pf8_info.copy_and_modify_mask(xds_mask)
     center_theory=center_theory_table[raw_data_index]
     pf8_info_mask.modify_radius(center_x=center_theory[0], center_y=center_theory[1])
     pf8 = PF8(pf8_info_mask)
-    print(pf8_info_mask)
+    
     start = datetime.now()
 
     peak_list = pf8.get_peaks_pf8(data=data)
@@ -63,7 +64,7 @@ def mask_peaks_and_calc_center(raw_data_index: int) -> List[Any]:
                 surrounding_mask[row, col] = 0
         
     mask = surrounding_mask
-    mask[np.where(xds_mask <= 0)] = 0
+    mask[np.where(xds_mask == 0)] = 0
     mask[np.where(data > args.hot_pixels_value)] = 0
 
     if args.auto==1:
@@ -173,7 +174,7 @@ def main():
 
     global center_theory_table
     center_theory_table, loaded_table = get_center_theory(paths, args.center)
-    print(center_theory_table)
+    #print(center_theory_table)
     
     file_format = get_format(args.input)
     if file_format == "lst":
@@ -218,7 +219,7 @@ def main():
     raw_data_index = np.arange(0, raw_data.shape[0])
     
     dimensions = [raw_data.shape[2], raw_data.shape[1]]
-    with Pool(6) as p:
+    with Pool() as p:
         result = p.map(mask_peaks_and_calc_center, raw_data_index)
     
     
