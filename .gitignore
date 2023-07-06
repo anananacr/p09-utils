@@ -55,3 +55,5 @@ scripts/skued/output
 scripts/centering/run_jobs_lyso_6800_6930.sh
 .gitignore
 scripts/skued/run_jobs_lyso_auto_200_400.sh
+scripts/centering/split-events-lyso_test.lst000
+scripts/centering/__pycache__/dash_stats.cpython-36.pyc
