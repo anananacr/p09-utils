@@ -15,25 +15,25 @@ SPLIT=100
 LABEL=$1
 FOLDER=$2
 
-ROOT=/gpfs/cfel/user/rodria/proc/p09_test/mov_sim_0
+ROOT=/gpfs/cfel/user/rodria/proc/p09_test/mov_lyso_0
 INPUT=${ROOT}/lists/${LABEL}.lst
 ERRORDIR=${ROOT}/error
 
 ### range param
-t_min=0.5
-t_max=0.51
+t_min=1.0
+t_max=1.01
 t_step=0.02
 
-r_min=0.7
-r_max=0.71
+r_min=0.8
+r_max=0.81
 r_step=0.02
 
-g_min=32
-g_max=33
+g_min=52
+g_max=53
 g_step=2
 
-l_min=0.2
-l_max=0.21
+l_min=0.5
+l_max=0.51
 l_step=0.02
 
 COUNT=0
@@ -102,8 +102,8 @@ for g in $(seq $g_min $g_step $g_max); do
                         if [ ${COUNT_JOB} -ge 0 ] && [ ${COUNT_JOB} -lt 10 ]
                         then
                             echo  "sbatch $ROOT/shell/$SLURMFILE;">> $RUN_FILE
-                            sbatch --test-only $SLURMFILE
-                            #sbatch $SLURMFILE
+                            #sbatch --test-only $SLURMFILE
+                            sbatch $SLURMFILE
                         else
                             :
                         fi
