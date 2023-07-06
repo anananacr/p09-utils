@@ -1,5 +1,5 @@
 #!/usr/bin/env python3.7
-#!module load crystfel
+
 import sys
 from skued import autocenter, azimuthal_average
 import fabio
@@ -10,7 +10,8 @@ import matplotlib.pyplot as plt
 from models import PF8, PF8Info
 from utils import get_format
 from diffractem import proc2d
-
+sys.path.append("../centering/")
+from dash_stats import get_center_theory
 
 def main():
     parser = argparse.ArgumentParser(description="Merge summed up PILATUS images.")
@@ -27,6 +28,13 @@ def main():
         action="store",
         help="analyse bragg peaks and/or background",
     )
+    parser.add_argument(
+        "-center",
+        "--center",
+        type=str,
+        action="store",
+        help="path to list of theoretical center positions file in .txt",
+    )
     args = parser.parse_args()
     print(args)
     files = open(args.input, "r")
@@ -35,14 +43,7 @@ def main():
     mask_files = open(args.mask, "r")
     mask_paths = mask_files.readlines()
 
-    table_real_center = [
-        [993, 831],
-        [993, 831],
-        [927, 832],
-        [927, 832],
-        [785, 826],
-        [785, 826],
-    ]
+    table_real_center, loaded_table = get_center_theory(paths, args.center)
 
     for idx, i in enumerate(paths):
         file_format = get_format(i)
@@ -60,6 +61,7 @@ def main():
             xds_mask = np.array(fabio.open(f"{mask_paths[idx][:-1]}").data)
             mask = np.ones_like(xds_mask)
             mask[np.where(xds_mask <= 0)] = 0
+            mask[np.where(xds_mask > 0)] = 1
             print(mask.shape)
 
         elif file_format == "h5":
@@ -84,13 +86,14 @@ def main():
             local_bg_radius=3,
             min_res=0,
             max_res=1200,
-            _bad_pixel_map=mask,
-            bad_pixel_map_filename=None,
+            _bad_pixel_map=mask
         )
+        real_center = table_real_center[idx][::-1]
+        pf8_info_mask.modify_radius(center_x=center_theory[0], center_y=center_theory[1])
         pf8 = PF8(pf8_info)
 
         peak_list = pf8.get_peaks_pf8(data=frame)
-        print(peak_list)
+        #print(peak_list)
         indices = (
             np.array(peak_list["ss"], dtype=int),
             np.array(peak_list["fs"], dtype=int),
@@ -130,7 +133,8 @@ def main():
         mask[np.where(frame > 7000)] = 0
 
         center = autocenter(frame, mask)
-        real_center = table_real_center[idx]
+        
+        
         x, y = azimuthal_average(frame, real_center, mask)
 
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
